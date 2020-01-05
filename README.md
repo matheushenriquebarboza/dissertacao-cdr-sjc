@@ -1,0 +1,4 @@
+# Matrizes origem-destino a partir de dados de telefonia celular: um novo modelo de processamento
+Esse repositório contém código relacionado à minha dissertação de Mestrado "Matrizes origem-destino a partir de dados de telefonia celular: um novo modelo de processamento", a ser apresentada no Programa de Engenharia de Transportes da COPPE/UFRJ.
+
+O trabalho apresenta um novo modelo que utiliza dados de registros de chamadas de telefonia celular para uso no planejamento de transportes. No modelo, dados de um mês de ligações realizadas em São José dos Campos são combinados com dados populacionais do último Censo e com informações da última pesquisa origem-destino domiciliar realizada na cidade, resultando na elaboração de matrizes de viagens mais próximas às observadas, como aferido por meio de diversas comparações.
