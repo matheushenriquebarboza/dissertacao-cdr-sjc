@@ -65,7 +65,7 @@ mapa_base_sem_areas = ggplot() +
 #1 avaliação dos fatores expansão####
 #1.1 gráfico população x usuários####
 grupos_sjc_temp <- grupos %>%
-  filter(grupo %in% grupos_sjc_lista$grupo, !is.na(f_exp))
+  filter(grupo %in% grupos_sjc_lista$grupo, !is.na(f1))
 x <- grupos_sjc_temp$popu
 y <- grupos_sjc_temp$moradores_identif
 eq <- lm(y ~ x)
@@ -137,8 +137,10 @@ matrizes_z$viagens_exp_sjc_SemCriada_i_ajus <-
   matrizes_z$viagens_exp_sjc_i_SemCriada * fator_sem_criadas
 
 #2.0.2 com criadas (para resolver os dois fatores x1 e x2 , iguala HBpicos e totais)
+
 #c=f*x1+g*x2, referente a viagens HBpicos. c é da OD, f do cdr e g do CDR criada 
 #a=d*x1+g*x2, referente a viagens total. a é da OD, d do cdr e g do CDR criada 
+
 #cria antes campo periodos
 cortes_periodos <- c(-1,5,9,14,19,25)#picos definidos entre 5h-10h e 15h-20h
 
@@ -163,7 +165,7 @@ g <- sum(matrizes_z$viagens_exp_sjc_i_Criada)
 
 fator_cdr <- (a-d) / (d-f)
 
-fator_cdrHB <- (c-f*fator_cdr)/  g
+fator_cdrHB <- (c-f*fator_cdr)/ g
 
 #cria campos com totais multiplicados por fatores
 matrizes_z$viagens_exp_sjc_i_ComCriada_ajus <- fator_cdr * matrizes_z$viagens_exp_sjc_i_SemCriada +
@@ -253,15 +255,17 @@ f_regressao_com_mapa <- function(x,y,M){
   return(temp_plot)
 }
 
-#2.2.1 zonas e hora - não rodar####
+#2.2.1 zonas e períodos####
 matriz_temp <- matrizes_z %>%
-  filter(O_ZONA <= 55, D_ZONA <= 55)
-cenario <- "hora_zona"
+  filter(O_ZONA <= 55, D_ZONA <= 55) %>%
+  group_by(O_ZONA, D_ZONA, periodos, MacroZona_i, MacroZona_j) %>% 
+  summarise_all(sum)
+cenario <- "periodo_zona"
 
 #2.2.1.1 Sem urb e com criadas
 temp_plot <- 
   f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_ComCriada_i_ajus,
+                       y = matriz_temp$viagens_exp_sjc_i_ComCriada_ajus,
                        M = matriz_temp)
 temp_plot
 ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
@@ -270,7 +274,7 @@ ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
 #2.2.1.2 Com urb e com criadas
 temp_plot <- 
   f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_urb_ComCriada_i_ajus,
+                       y = matriz_temp$viagens_exp_sjc_i_urb_ComCriada_ajus,
                        M = matriz_temp)
 temp_plot
 ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
@@ -279,7 +283,7 @@ ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
 #2.2.1.3 Sem urb e sem criadas
 temp_plot <- 
   f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_SemCriada_i_ajus,
+                       y = matriz_temp$viagens_exp_sjc_i_SemCriada_ajus,
                        M = matriz_temp)
 temp_plot
 ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
@@ -288,18 +292,20 @@ ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
 #2.2.1.4 Com urb e sem criadas
 temp_plot <- 
   f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_urb_SemCriada_i_ajus,
+                       y = matriz_temp$viagens_exp_sjc_i_urb_SemCriada_ajus,
                        M = matriz_temp)
 temp_plot
 ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
                               "_comUrb_SemCriada.png"))
 
-#2.2.2 zonas e períodos####
+#2.2.2 zonas e dia####
 matriz_temp <- matrizes_z %>%
-  filter(O_ZONA <= 55, D_ZONA <= 55) %>%
-  group_by(O_ZONA, D_ZONA, periodos, MacroZona_i, MacroZona_j) %>% 
+  filter(O_ZONA <= 55, D_ZONA <= 55) %>% 
+  select(-c("hora_i_exata", "periodos","MacroZona_i", "MacroZona_j")) %>%
+  group_by(O_ZONA, D_ZONA) %>% 
   summarise_all(sum)
-cenario <- "periodo_zona"
+
+cenario <- "dia_zona"
 
 #2.2.2.1 Sem urb e com criadas
 temp_plot <- 
@@ -337,14 +343,14 @@ temp_plot
 ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
                               "_comUrb_SemCriada.png"))
 
-#2.2.3 zonas e dia####
+#2.2.3 macrozonas e periodo####
 matriz_temp <- matrizes_z %>%
   filter(O_ZONA <= 55, D_ZONA <= 55) %>% 
-  select(-c("hora_i_exata", "periodos","MacroZona_i", "MacroZona_j")) %>%
-  group_by(O_ZONA, D_ZONA) %>% 
+  select(-c("hora_i_exata")) %>%
+  group_by(MacroZona_i, MacroZona_j, periodos) %>% 
   summarise_all(sum)
 
-cenario <- "dia_zona"
+cenario <- "periodo_macrozona"
 
 #2.2.3.1 Sem urb e com criadas
 temp_plot <- 
@@ -381,100 +387,6 @@ temp_plot <-
 temp_plot
 ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
                               "_comUrb_SemCriada.png"))
-
-#2.2.4 macrozonas e hora - n rodar####
-matriz_temp <- matrizes_z %>%
-  filter(O_ZONA <= 55, D_ZONA <= 55) %>% 
-  select(-c("periodos")) %>%
-  group_by(MacroZona_i, MacroZona_j, hora_i_exata) %>% 
-  summarise_all(sum)
-
-cenario <- "hora_macrozona"
-
-#2.2.4.1 Sem urb e com criadas
-temp_plot <- 
-  f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_i_ComCriada_ajus,
-                       M = matriz_temp)
-temp_plot
-ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
-                              "_semUrb_ComCriada.png"))
-
-#2.2.4.2 Com urb e com criadas
-temp_plot <- 
-  f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_urb_ComCriada_i_ajus,
-                       M = matriz_temp)
-temp_plot
-ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
-                              "_comUrb_ComCriada.png"))
-
-#2.2.4.3 Sem urb e sem criadas
-temp_plot <- 
-  f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_SemCriada_i_ajus,
-                       M = matriz_temp)
-temp_plot
-ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
-                              "_semUrb_SemCriada.png"))
-
-#2.2.4.4 Com urb e sem criadas
-temp_plot <- 
-  f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_urb_SemCriada_i_ajus,
-                       M = matriz_temp)
-temp_plot
-ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
-                              "_comUrb_SemCriada.png"))
-
-#2.2.5 macrozonas e periodo####
-matriz_temp <- matrizes_z %>%
-  filter(O_ZONA <= 55, D_ZONA <= 55) %>% 
-  select(-c("hora_i_exata")) %>%
-  group_by(MacroZona_i, MacroZona_j, periodos) %>% 
-  summarise_all(sum)
-
-cenario <- "periodo_macrozona"
-
-#2.2.5.1 Sem urb e com criadas
-temp_plot <- 
-  f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_i_ComCriada_ajus,
-                       M = matriz_temp)
-temp_plot
-ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
-                              "_semUrb_ComCriada.png"))
-
-#2.2.5.2 Com urb e com criadas
-temp_plot <- 
-  f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_i_urb_ComCriada_ajus,
-                       M = matriz_temp)
-temp_plot
-ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
-                              "_comUrb_ComCriada.png"))
-
-#2.2.5.3 Sem urb e sem criadas
-temp_plot <- 
-  f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_i_SemCriada_ajus,
-                       M = matriz_temp)
-temp_plot
-ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
-                              "_semUrb_SemCriada.png"))
-
-#2.2.5.4 Com urb e sem criadas
-temp_plot <- 
-  f_regressao_com_mapa(x = matriz_temp$viagens_exp_pesquisa_i,
-                       y = matriz_temp$viagens_exp_sjc_i_urb_SemCriada_ajus,
-                       M = matriz_temp)
-temp_plot
-ggsave(temp_plot, file=paste0("!figuras/cdr_x_od_",cenario,
-                              "_comUrb_SemCriada.png"))
-
-#2.2.6 macrozonas dia
-#um único gráfico com pontos e linhas diferenciados por cor=cenarioCDR
-
 
 #3 Comparação padrões horários####
 #curvas 3 fontes de dados - od, cdr e cdr ajus
@@ -840,7 +752,7 @@ for(i in levels(periodos$periodos)){
 
 #5 visualização matriz####
 #5.1 dissolve borda dos polígonos no mesmo grupo####
-# apenas uma visulaização para validar, n precisa rodar
+# apenas uma visualização para validar, n entrou no trabalho
 
 #marca quadrados em sjc
 SJC_limite_municipal_4326$NM_MUNICIP <- "sjc"
@@ -1010,7 +922,7 @@ for(i in c("viagens_o_pm","viagens_o","viagens_d_pm","viagens_d") ){
 viagens_por_grupo_temp <- viagens_sjc %>%
   filter(utilizadas==T) %>% 
   group_by(domicilio) %>% 
-  summarise(viagens_exp = sum(fator, na.rm=T))
+  summarise(viagens_exp = sum(f3, na.rm=T))
  
 # converte de grupo para zonas
 viagens_por_zona_temp <- viagens_por_grupo_temp %>% 
@@ -1138,7 +1050,7 @@ temp_plot
 
 ggsave(temp_plot, file = '!figuras/linhas_desejo_distancia.png')
 
-#com zzom
+#com zoom
 temp_plot = ggplot()+
   geom_sf(data=l %>% filter(viagens_exp_sjc_i_ComCriada_ajus>50, O_ZONA!=48, D_ZONA!=48),
           aes(size=viagens_exp_sjc_i_ComCriada_ajus, color=distance/1000), show.legend = "line")+
