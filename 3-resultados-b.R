@@ -639,7 +639,7 @@ temp_plot
 
 ggsave(temp_plot, file="distribuicao_viagens_distancia_zoom.png")
 
-#2.3 fluxo entre macrozonas por período####
+#4.3 fluxo entre macrozonas por período####
 #agrupa resultado em macrozonas
 matriz_temp <- matrizes_z %>% 
   group_by(MacroZona_i, MacroZona_j, periodos) %>% 
@@ -704,7 +704,7 @@ for(i in levels(periodos$periodos)){
   }
 }
 
-#2.3.2 para cdr
+#4.3.2 para cdr
 #agrupa resultado em macrozonas
 matriz_temp <- matrizes_z %>% 
   group_by(MacroZona_i, MacroZona_j, periodos) %>% 
